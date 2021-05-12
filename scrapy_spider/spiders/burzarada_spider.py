@@ -14,7 +14,9 @@ class JobSpider(scrapy.Spider):
         i = 0
         for href in response.css('div.NKZbox > div.KategorijeBox > a ::attr(href)').extract(): 
             i = i + 1
-            if i > 1:
+            if i == 1:
+                continue
+            if i == 3:
                 break
             print("i = ", i)
 
@@ -117,17 +119,18 @@ class JobSpider(scrapy.Spider):
         # print(response.body.decode('utf-8'))
         # See how many pages to open in viewport 75
 
-        pages = response.xpath('//*[@id="ctl00_MainContent_gwSearch"]//tr[last()]//li')
+        hrefs = response.xpath('//*[@id="ctl00_MainContent_gwSearch"]//tr[last()]//li/@href').extract()
         # pages = response.xpath('/html/body/form/section/div/div/div[1]/div[3]/div/div[2]/table/tbody/tr[76]/td/div/div/ul/li[2]/a').extract()
 
         print("////////////////////////////////////////////")
-        print("length of pages: ", len(pages))
+        print("length of pages: ", len(hrefs))
         print("////////////////////////////////////////////")
 
-        if len(pages) != 0:   
-            for page in pages:
+        if len(hrefs) != 0:   
+            for href in hrefs:
 
-                href = page.xpath('/@href').extract()
+                # href = page.xpath('/@href').extract()
+                print(href)
 
                 eventTarget = href.replace("javascript:__doPostBack('", "").replace("','')", "")
                 eventArgument = response.css('#__EVENTARGUMENT::attr(value)').extract()
@@ -186,46 +189,48 @@ class JobSpider(scrapy.Spider):
 
         item = JobsItem()
 
-        print(response.body.decode('utf-8'))
+        print(response)
+
+        # html_file = open('index.html', 'w', encoding="utf-8")
+        # html_file.write(response.body.decode('utf-8'))
+        # html_file.close()
         
-        html_file = open('index.html', 'w', encoding="utf-8")
-        html_file.write(response.body.decode('utf-8'))
-        html_file.close()
-        
-        url = response.request.url,
+        url = response.request.url
         print("url: ", url)
 
-        title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/h3/font/font').get(),
+        # title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/h3/font/font').get(),
+        title = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract()
         print("title: ", title)
         
-        if "/Details/" in response.request.url:
-            source = "Mojposao",
-        else:
-            source = "Poslovac"
+        # if "/Details/" in response.request.url:
+        #     source = "Mojposao",
+        # else:
+        #     source = "Poslovac"
+        source = 'burzarada'
         print("source: ", source)
 
-        employer = response.xpath('//*[@id="ctl00_MainContent_lblNazivPoslodavca"]/font/font/text()').get(),
+        employer = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract()
         print('employer: ', employer)
-
-        workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]/font/font').get(),
+        
+        workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract()
         print('workplace: ', workplace)
 
-        start_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediOd"]/text()').get(),
+        start_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediOd"]//text()').extract()
         print('start_date: ', start_date)
 
-        end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]/text()').get(),
+        end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]//text()').extract()
         print('end_date: ', end_date)
 
-        description1 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblSmjestaj"]/font/font/text()').getall()),
+        description1 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/font[1]//text()').getall())
         print('end_date: ', end_date)
 
-        description2 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblNaknada"]/font/font/text()').getall()),
+        description2 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/font[2]//text()').getall())
 
-        requirements = ' '.join(response.xpath('//*[@id="ctl00_MainContent_bulRazinaObrazovanja"]/li[1]/font/font/*/text()').getall()),
+        requirements = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblRazinaObrazovanja"]//text()').getall())
 
-        benefits = ' '.join(response.xpath('//*[@id="ctl00_MainContent_bulRazinaObrazovanja"]/li[1]/font/font/*/text()').getall()),
+        benefits = ' '.join(response.xpath('//*[@id="ctl00_MainContent_bulRazinaObrazovanja"]/li[1]/font/font/*/text()').getall())
 
-        category = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblVrstaZaposlenja"]/font/text()').getall()),
+        category = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblVrstaZaposlenja"]/font/text()').getall())
 
         item["url"] = url
         item["title"] = title
