@@ -1,5 +1,7 @@
 import scrapy
 from scrapy_spider.items import JobsItem
+import sys
+
 
 class JobSpider(scrapy.Spider): 
     
@@ -13,11 +15,11 @@ class JobSpider(scrapy.Spider):
     def parse(self, response): 
         i = 0
         for href in response.css('div.NKZbox > div.KategorijeBox > a ::attr(href)').extract(): 
-            i = i + 1
-            if i == 1:
-                continue
-            if i == 3:
-                break
+            # i = i + 1
+            # if i == 1:
+            #     continue
+            # if i == 3:
+            #     break
             print("i = ", i)
 
             # Getting form data
@@ -119,7 +121,7 @@ class JobSpider(scrapy.Spider):
         # print(response.body.decode('utf-8'))
         # See how many pages to open in viewport 75
 
-        hrefs = response.xpath('//*[@id="ctl00_MainContent_gwSearch"]//tr[last()]//li/@href').extract()
+        hrefs = response.xpath('//*[@id="ctl00_MainContent_gwSearch"]//tr[last()]//li/a/@href').extract()
         # pages = response.xpath('/html/body/form/section/div/div/div[1]/div[3]/div/div[2]/table/tbody/tr[76]/td/div/div/ul/li[2]/a').extract()
 
         print("////////////////////////////////////////////")
@@ -191,12 +193,12 @@ class JobSpider(scrapy.Spider):
 
         print(response)
 
+        url = response.request.url
+        print("url: ", url)
+
         # html_file = open('index.html', 'w', encoding="utf-8")
         # html_file.write(response.body.decode('utf-8'))
         # html_file.close()
-        
-        url = response.request.url
-        print("url: ", url)
 
         # title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/h3/font/font').get(),
         title = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract()
@@ -248,6 +250,11 @@ class JobSpider(scrapy.Spider):
         print(item)
 
         yield item
+
+        f = open("test.out", 'w')
+        sys.stdout = f
+        print("test")
+        f.close()
     
     # def parse_results(self, response): 
     #     for quote in response.css("div.quote"): 
