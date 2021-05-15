@@ -1,13 +1,9 @@
 import scrapy
 from scrapy_spider.items import JobsItem
-import sys
 
 
 class JobSpider(scrapy.Spider): 
     
-    # def __init__(self):
-    #     self.html_file
-
     name = 'burzarada' 
     start_urls = ['https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx'] 
     download_delay = 1.5 
@@ -15,11 +11,11 @@ class JobSpider(scrapy.Spider):
     def parse(self, response): 
         i = 0
         for href in response.css('div.NKZbox > div.KategorijeBox > a ::attr(href)').extract(): 
-            # i = i + 1
+            i = i + 1
             # if i == 1:
             #     continue
-            # if i == 3:
-            #     break
+            if i == 4:
+                break
             print("i = ", i)
 
             # Getting form data
@@ -30,11 +26,9 @@ class JobSpider(scrapy.Spider):
             viewStateGenerator = response.css('#__VIEWSTATEGENERATOR::attr(value)').extract()
             viewStateEncrypted = response.css('#__VIEWSTATEENCRYPTED::attr(value)').extract()
             
+
             print("eventTarget:", eventTarget)
-
-            # path_to_html = eventTarget + '.html'
-
-            # self.html_file = open(path_to_html, 'w')
+            print("MainPage: ", i)
 
             yield scrapy.FormRequest( 
 
@@ -50,8 +44,7 @@ class JobSpider(scrapy.Spider):
                 },
 
                 callback=self.parse_category 
-            
-            ) 
+            )
             
     # def parse_category(self, response): 
     #     for tag in response.css('select#tag > option ::attr(value)').extract(): 
@@ -61,7 +54,7 @@ class JobSpider(scrapy.Spider):
         print("--------------------------")
         print("--------------------------")
         print("--------------------------")
-        print("Response")
+        print("Caregory parsing...")
         # print(response)
         # print(response.body.decode('utf-8'))
 
@@ -105,11 +98,11 @@ class JobSpider(scrapy.Spider):
             
         )
         # else:
-        print("Viewport Set to 75!")
+        # print("Viewport Set to 75!")
 
-        print("--------------------------")
-        print("--------------------------")
-        print("--------------------------")
+        # print("--------------------------")
+        # print("--------------------------")
+        # print("--------------------------")
         # for tag in response.css('select#tag > option ::attr(value)').extract(): 
         #     yield scrapy.FormRequest.from_response( response, formdata={'tag': tag}, callback=self.parse_results, )
     
@@ -125,14 +118,20 @@ class JobSpider(scrapy.Spider):
         # pages = response.xpath('/html/body/form/section/div/div/div[1]/div[3]/div/div[2]/table/tbody/tr[76]/td/div/div/ul/li[2]/a').extract()
 
         print("////////////////////////////////////////////")
-        print("length of pages: ", len(hrefs))
+        print("parse_multiple_pages---length of pages: ", len(hrefs))
         print("////////////////////////////////////////////")
+
+        j = 0
+        # if len(hrefs) == 0:
+
+        #     hrefs.append()
 
         if len(hrefs) != 0:   
             for href in hrefs:
-
+                j = j + 1
                 # href = page.xpath('/@href').extract()
-                print(href)
+                print("viewport button: ", href)
+                print("id of button: ", j)
 
                 eventTarget = href.replace("javascript:__doPostBack('", "").replace("','')", "")
                 eventArgument = response.css('#__EVENTARGUMENT::attr(value)').extract()
@@ -145,6 +144,24 @@ class JobSpider(scrapy.Spider):
 
                 print(eventTarget)
 
+                # yield scrapy.FormRequest( 
+
+                #     'https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx', 
+
+                #     formdata = { 
+                #         '__EVENTTARGET': eventTarget, 
+                #         '__EVENTARGUMENT': eventArgument, 
+                #         '__LASTFOCUS': lastFocus, 
+                #         '__VIEWSTATE': viewState, 
+                #         '__VIEWSTATEGENERATOR': viewStateGenerator,
+                #         '__VIEWSTATEENCRYPTED': viewStateEncrypted,
+                #         'ctl00$MainContent$ddlPageSize': pageSize,
+                #         'ctl00$MainContent$ddlSort': sort,
+                #     },
+
+                #     callback=self.parse_links 
+                    
+                # )
                 yield scrapy.FormRequest( 
 
                     'https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx', 
@@ -165,16 +182,8 @@ class JobSpider(scrapy.Spider):
                 )
         
         else:
+            yield self.parse_job_list_single(response)
             # self.parse_links(response)
-            links = response.xpath('//a[@class="TitleLink"]/@href').extract()
-            print("////////////////////////////////////////////")
-            print("length of links: ", len(links))
-            print("////////////////////////////////////////////")
-
-            for link in links:
-                link = 'https://burzarada.hzz.hr/' + link
-                print(link)
-                yield scrapy.Request(url=link, callback=self.parse_job)
 
     def parse_links(self, response):
         links = response.xpath('//a[@class="TitleLink"]/@href').extract()
@@ -182,9 +191,13 @@ class JobSpider(scrapy.Spider):
         print("length of links: ", len(links))
         print("////////////////////////////////////////////")
 
+        k = 0
+
         for link in links:
+            k = k + 1
             link = 'https://burzarada.hzz.hr/' + link
-            print(link)
+            print("final link: ", link)
+            print("job id in one page: ", k)
             yield scrapy.Request(url=link, callback=self.parse_job)
 
     def parse_job(self, response):
@@ -193,68 +206,153 @@ class JobSpider(scrapy.Spider):
 
         print(response)
 
+        """
         url = response.request.url
-        print("url: ", url)
-
-        # html_file = open('index.html', 'w', encoding="utf-8")
-        # html_file.write(response.body.decode('utf-8'))
-        # html_file.close()
-
-        # title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/h3/font/font').get(),
-        title = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract()
-        print("title: ", title)
-        
-        # if "/Details/" in response.request.url:
-        #     source = "Mojposao",
-        # else:
-        #     source = "Poslovac"
-        source = 'burzarada'
-        print("source: ", source)
-
-        employer = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract()
-        print('employer: ', employer)
-        
-        workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract()
-        print('workplace: ', workplace)
-
-        start_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediOd"]//text()').extract()
-        print('start_date: ', start_date)
-
-        end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]//text()').extract()
-        print('end_date: ', end_date)
-
-        description1 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/font[1]//text()').getall())
-        print('end_date: ', end_date)
-
-        description2 = ' '.join(response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]/ajaxblock/div/div/font[2]//text()').getall())
-
-        requirements = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblRazinaObrazovanja"]//text()').getall())
-
-        benefits = ' '.join(response.xpath('//*[@id="ctl00_MainContent_bulRazinaObrazovanja"]/li[1]/font/font/*/text()').getall())
-
-        category = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblVrstaZaposlenja"]/font/text()').getall())
-
-        item["url"] = url
-        item["title"] = title
-        item["source"] = source
-        item["employer"] = employer
-        item["workplace"] = workplace
-        item["start_date"] = start_date
-        item["end_date"] = end_date
-        item["category"] = category
-        item["description1"] = description1
-        item["description2"] = description2
-        item["requirements"] = requirements
-        item["benefits"] = benefits
+        title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract_first()
+        workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract_first()
+        required_workers = response.xpath('//*[@id="ctl00_MainContent_lblBrojRadnika"]//text()').extract_first()
+        type_of_employment = response.xpath('//*[@id="ctl00_MainContent_lblVrstaZaposlenja"]//text()').extract_first()
+        working_hours = response.xpath('//*[@id="ctl00_MainContent_lblRadnoVrijeme"]//text()').extract_first()
+        mode_of_operation = response.xpath('//*[@id="ctl00_MainContent_lblNacinRada"]//text()').extract_first()
+        accomodation = response.xpath('//*[@id="ctl00_MainContent_lblSmjestaj"]//text()').extract_first()
+        transportation_fee = response.xpath('//*[@id="ctl00_MainContent_lblNaknada"]//text()').extract_first()
+        start_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediOd"]//text()').extract_first()
+        end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]//text()').extract_first()
+        education_level = response.xpath('//*[@id="ctl00_MainContent_lblRazinaObrazovanja"]//text()').extract_first()
+        work_experience = response.xpath('//*[@id="ctl00_MainContent_lblRadnoIskustvo"]//text()').extract_first()
+        other_information = response.xpath('//*[preceding-sibling::[@id="ctl00_MainContent_lblOstaleInformacijeText"] and following-sibling::hr]//text()').extract_first()
+        employer = response.xpath('//*[@id="ctl00_MainContent_lblNazivPoslodavca"]//text()').extract_first()
+        contact = response.xpath('//font[preceding-sibling::[@id="ctl00_MainContent_lblKontaktKandidataText"] and following-sibling::hr]//text()').extract_first()
+        driving_test  = response.xpath('//*[@id="ctl00_MainContent_lblVozackiIspit"]//text()').extract_first()       
+        """
+        """
+        item['url'] = url
+        item['title'] = title
+        item['workplace'] = workplace
+        item['required_workers'] = required_workers
+        item['type_of_employment'] = type_of_employment
+        item['working_hours'] = working_hours
+        item['mode_of_operation'] = mode_of_operation
+        item['accomodation'] = accomodation
+        item['transportation_fee'] = transportation_fee
+        item['start_date'] = start_date
+        item['end_date'] = end_date
+        item['education_level'] = education_level
+        item['work_experience'] = work_experience
+        item['other_information'] = other_information
+        item['employer'] = employer
+        item['contact'] = contact
+        item['driving_test'] = driving_test
 
         print(item)
 
+        """
+        item['url'] = ''
+        item['title'] = ''
+        item['workplace'] = ''
+        item['required_workers'] = ''
+        item['type_of_employment'] = ''
+        item['working_hours'] = ''
+        item['mode_of_operation'] = ''
+        item['accomodation'] = ''
+        item['transportation_fee'] = ''
+        item['start_date'] = ''
+        item['end_date'] = ''
+        item['education_level'] = ''
+        item['work_experience'] = ''
+        item['other_information'] = ''
+        item['employer'] = ''
+        item['contact'] = ''
+        item['driving_test'] = ''
+
+        yield item
+    
+
+    def parse_job_list_single(self, response):
+
+        print("no buttons found")
+        links = response.xpath('//a[@class="TitleLink"]/@href').extract()
+        print("////////////////////////////////////////////")
+        print("length of links in id: ", len(links), " in ", j)
+        print("////////////////////////////////////////////")
+
+        for link in links:
+            link = 'https://burzarada.hzz.hr/' + link
+            print(link)
+            yield scrapy.Request(url=link, callback=self.parse_job_single)
+    
+
+    def parse_job_single(self, response):
+
+        item = JobsItem()
+
+        print(response)
+
+        """
+        url = response.request.url
+        title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract_first()
+        workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract_first()
+        required_workers = response.xpath('//*[@id="ctl00_MainContent_lblBrojRadnika"]//text()').extract_first()
+        type_of_employment = response.xpath('//*[@id="ctl00_MainContent_lblVrstaZaposlenja"]//text()').extract_first()
+        working_hours = response.xpath('//*[@id="ctl00_MainContent_lblRadnoVrijeme"]//text()').extract_first()
+        mode_of_operation = response.xpath('//*[@id="ctl00_MainContent_lblNacinRada"]//text()').extract_first()
+        accomodation = response.xpath('//*[@id="ctl00_MainContent_lblSmjestaj"]//text()').extract_first()
+        transportation_fee = response.xpath('//*[@id="ctl00_MainContent_lblNaknada"]//text()').extract_first()
+        start_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediOd"]//text()').extract_first()
+        end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]//text()').extract_first()
+        education_level = response.xpath('//*[@id="ctl00_MainContent_lblRazinaObrazovanja"]//text()').extract_first()
+        work_experience = response.xpath('//*[@id="ctl00_MainContent_lblRadnoIskustvo"]//text()').extract_first()
+        other_information = response.xpath('//*[preceding-sibling::[@id="ctl00_MainContent_lblOstaleInformacijeText"] and following-sibling::hr]//text()').extract_first()
+        employer = response.xpath('//*[@id="ctl00_MainContent_lblNazivPoslodavca"]//text()').extract_first()
+        contact = response.xpath('//font[preceding-sibling::[@id="ctl00_MainContent_lblKontaktKandidataText"] and following-sibling::hr]//text()').extract_first()
+        driving_test  = response.xpath('//*[@id="ctl00_MainContent_lblVozackiIspit"]//text()').extract_first()       
+        """
+        """
+        item['url'] = url
+        item['title'] = title
+        item['workplace'] = workplace
+        item['required_workers'] = required_workers
+        item['type_of_employment'] = type_of_employment
+        item['working_hours'] = working_hours
+        item['mode_of_operation'] = mode_of_operation
+        item['accomodation'] = accomodation
+        item['transportation_fee'] = transportation_fee
+        item['start_date'] = start_date
+        item['end_date'] = end_date
+        item['education_level'] = education_level
+        item['work_experience'] = work_experience
+        item['other_information'] = other_information
+        item['employer'] = employer
+        item['contact'] = contact
+        item['driving_test'] = driving_test
+
+        print(item)
+
+        """
+        item['url'] = ''
+        item['title'] = ''
+        item['workplace'] = ''
+        item['required_workers'] = ''
+        item['type_of_employment'] = ''
+        item['working_hours'] = ''
+        item['mode_of_operation'] = ''
+        item['accomodation'] = ''
+        item['transportation_fee'] = ''
+        item['start_date'] = ''
+        item['end_date'] = ''
+        item['education_level'] = ''
+        item['work_experience'] = ''
+        item['other_information'] = ''
+        item['employer'] = ''
+        item['contact'] = ''
+        item['driving_test'] = ''
+
         yield item
 
-        f = open("test.out", 'w')
-        sys.stdout = f
-        print("test")
-        f.close()
+        # f = open("test.out", 'w')
+        # sys.stdout = f
+        # print("test")
+        # f.close()
     
     # def parse_results(self, response): 
     #     for quote in response.css("div.quote"): 
