@@ -1,22 +1,18 @@
 import scrapy
 from scrapy_spider.items import JobsItem
 
+pageSize = '75'
+sort = '0'
 
 class JobSpider(scrapy.Spider): 
     
     name = 'burzarada' 
     start_urls = ['https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx'] 
-    download_delay = 1.5 
+    download_delay = 0.5 
 
     def parse(self, response): 
-        i = 0
+
         for href in response.css('div.NKZbox > div.KategorijeBox > a ::attr(href)').extract(): 
-            i = i + 1
-            # if i == 1:
-            #     continue
-            if i == 4:
-                break
-            print("i = ", i)
 
             # Getting form data
             eventTarget = href.replace("javascript:__doPostBack('", "").replace("','')", "")
@@ -25,10 +21,6 @@ class JobSpider(scrapy.Spider):
             viewState = response.css('#__VIEWSTATE::attr(value)').extract()
             viewStateGenerator = response.css('#__VIEWSTATEGENERATOR::attr(value)').extract()
             viewStateEncrypted = response.css('#__VIEWSTATEENCRYPTED::attr(value)').extract()
-            
-
-            print("eventTarget:", eventTarget)
-            print("MainPage: ", i)
 
             yield scrapy.FormRequest( 
 
@@ -41,94 +33,21 @@ class JobSpider(scrapy.Spider):
                     '__VIEWSTATE': viewState, 
                     '__VIEWSTATEGENERATOR': viewStateGenerator,
                     '__VIEWSTATEENCRYPTED': viewStateEncrypted,
+                    'ctl00$MainContent$ddlPageSize': pageSize,
+                    'ctl00$MainContent$ddlSort': sort,
                 },
 
-                callback=self.parse_category 
+                callback=self.parse_multiple_pages 
             )
 
 
-    def parse_category(self, response): 
-        print("--------------------------")
-        print("--------------------------")
-        print("--------------------------")
-        print("Response")
-        # print(response)
-        # print(response.body.decode('utf-8'))
-
-        # html_file = open('index.html', 'w', encoding="utf-8")
-        # html_file.write(response.body.decode('utf-8'))
-        # html_file.close()
-
-        # Set the viewport to 75
-        
-        # if response.css('select#ctl00_MainContent_ddlPageSize > option[selected="selected"]::attr(value)').extract() != 75:
-        # href = response.xpath('//select[@id="ctl00_MainContent_ddlPageSize"]/@onchange').extract()
-        href = response.xpath('//select[@id="ctl00_MainContent_ddlPageSize"]').extract()
-        print(href)
-        # eventTarget = href.replace("javascript:setTimeout('__doPostBack(\'", "").replace("\',\'\')', 0)", "")
-        eventTarget = "ctl00$MainContent$ddlPageSize"
-        # print(eventTarget)
-        eventArgument = response.css('#__EVENTARGUMENT::attr(value)').extract()
-        lastFocus = response.css('#__LASTFOCUS::attr(value)').extract()
-        viewState = response.css('#__VIEWSTATE::attr(value)').extract()
-        viewStateGenerator = response.css('#__VIEWSTATEGENERATOR::attr(value)').extract()
-        viewStateEncrypted = response.css('#__VIEWSTATEENCRYPTED::attr(value)').extract()
-        pageSize = '75'
-        sort = '0'
-
-        yield scrapy.FormRequest( 
-
-            'https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx', 
-
-            formdata = { 
-                '__EVENTTARGET': eventTarget, 
-                '__EVENTARGUMENT': eventArgument, 
-                '__LASTFOCUS': lastFocus, 
-                '__VIEWSTATE': viewState, 
-                '__VIEWSTATEGENERATOR': viewStateGenerator,
-                '__VIEWSTATEENCRYPTED': viewStateEncrypted,
-                'ctl00$MainContent$ddlPageSize': pageSize,
-                'ctl00$MainContent$ddlSort': sort,
-            },
-
-            callback=self.parse_multiple_pages 
-            
-        )
-        # else:
-        # print("Viewport Set to 75!")
-
-        # print("--------------------------")
-        # print("--------------------------")
-        # print("--------------------------")
-        # for tag in response.css('select#tag > option ::attr(value)').extract(): 
-        #     yield scrapy.FormRequest.from_response( response, formdata={'tag': tag}, callback=self.parse_results, )
-    
     def parse_multiple_pages(self, response):
-        print("--------------------------")
-        print("--------------------------")
-        print("--------------------------")
-        print("Multiple Page Dealers")
-        # print(response.body.decode('utf-8'))
-        # See how many pages to open in viewport 75
 
-        hrefs = response.xpath('//*[@id="ctl00_MainContent_gwSearch"]//tr[last()]//li/a/@href').extract()
-        # pages = response.xpath('/html/body/form/section/div/div/div[1]/div[3]/div/div[2]/table/tbody/tr[76]/td/div/div/ul/li[2]/a').extract()
-
-        print("////////////////////////////////////////////")
-        print("parse_multiple_pages---length of pages: ", len(hrefs))
-        print("////////////////////////////////////////////")
-
-        j = 0
-        # if len(hrefs) == 0:
-
-        #     hrefs.append()
+        hrefs = response.xpath('//ul[contains(@class, "pagination")]//a/@href').extract()
 
         if len(hrefs) != 0:   
+
             for href in hrefs:
-                j = j + 1
-                # href = page.xpath('/@href').extract()
-                print("viewport button: ", href)
-                print("id of button: ", j)
 
                 eventTarget = href.replace("javascript:__doPostBack('", "").replace("','')", "")
                 eventArgument = response.css('#__EVENTARGUMENT::attr(value)').extract()
@@ -136,10 +55,6 @@ class JobSpider(scrapy.Spider):
                 viewState = response.css('#__VIEWSTATE::attr(value)').extract()
                 viewStateGenerator = response.css('#__VIEWSTATEGENERATOR::attr(value)').extract()
                 viewStateEncrypted = response.css('#__VIEWSTATEENCRYPTED::attr(value)').extract()
-                pageSize = '75'
-                sort = '0'
-
-                print(eventTarget)
 
                 yield scrapy.FormRequest( 
 
@@ -161,30 +76,25 @@ class JobSpider(scrapy.Spider):
                 )
         
         else:
+
             requests_for_job_details = self.parse_links(response)
+
             for request in requests_for_job_details:
+
                 yield request
 
     def parse_links(self, response):
+        
         links = response.xpath('//a[@class="TitleLink"]/@href').extract()
-        print("////////////////////////////////////////////")
-        print("length of links: ", len(links))
-        print("////////////////////////////////////////////")
-
-        k = 0
 
         for link in links:
-            k = k + 1
+
             link = 'https://burzarada.hzz.hr/' + link
-            print("final link: ", link)
-            print("job id in one page: ", k)
             yield scrapy.Request(url=link, callback=self.parse_job)
 
     def parse_job(self, response):
 
         item = JobsItem()
-
-        print(response)
 
         url = response.request.url
         title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract_first()
@@ -199,9 +109,9 @@ class JobSpider(scrapy.Spider):
         end_date = response.xpath('//*[@id="ctl00_MainContent_lblVrijediDo"]//text()').extract_first()
         education_level = response.xpath('//*[@id="ctl00_MainContent_lblRazinaObrazovanja"]//text()').extract_first()
         work_experience = response.xpath('//*[@id="ctl00_MainContent_lblRadnoIskustvo"]//text()').extract_first()
-        other_information = response.xpath('//*[preceding-sibling::[@id="ctl00_MainContent_lblOstaleInformacijeText"] and following-sibling::hr]//text()').extract_first()
+        other_information = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblOstaleInformacijeText"]/following-sibling::text()').getall())
         employer = response.xpath('//*[@id="ctl00_MainContent_lblNazivPoslodavca"]//text()').extract_first()
-        contact = response.xpath('//font[preceding-sibling::[@id="ctl00_MainContent_lblKontaktKandidataText"] and following-sibling::hr]//text()').extract_first()
+        contact = ' '.join(response.xpath('//*[@id="ctl00_MainContent_lblKontaktKandidataText"]/following-sibling::ul//text()').getall())
         driving_test  = response.xpath('//*[@id="ctl00_MainContent_lblVozackiIspit"]//text()').extract_first()       
 
         item['url'] = url
@@ -222,29 +132,4 @@ class JobSpider(scrapy.Spider):
         item['contact'] = contact
         item['driving_test'] = driving_test
 
-        print(item)
-
-        """
-        item['url'] = ''
-        item['title'] = ''
-        item['workplace'] = ''
-        item['required_workers'] = ''
-        item['type_of_employment'] = ''
-        item['working_hours'] = ''
-        item['mode_of_operation'] = ''
-        item['accomodation'] = ''
-        item['transportation_fee'] = ''
-        item['start_date'] = ''
-        item['end_date'] = ''
-        item['education_level'] = ''
-        item['work_experience'] = ''
-        item['other_information'] = ''
-        item['employer'] = ''
-        item['contact'] = ''
-        item['driving_test'] = ''
-        """
-
         yield item
-    
-
-    
