@@ -9,6 +9,7 @@ from scrapy.loader.processors import Compose, MapCompose, TakeFirst
 class JobsItem(scrapy.Item):
     
     url = scrapy.Field(output_processor = TakeFirst())
+    category = scrapy.Field(input_processor = MapCompose(str.strip), output_processor = TakeFirst())
     title = scrapy.Field(input_processor = MapCompose(str.strip), output_processor = TakeFirst())
     workplace = scrapy.Field(input_processor = MapCompose(str.strip), output_processor = TakeFirst())
     type_of_employment = scrapy.Field(input_processor = MapCompose(str.strip), output_processor = TakeFirst())

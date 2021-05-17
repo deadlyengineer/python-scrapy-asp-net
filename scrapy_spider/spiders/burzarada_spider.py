@@ -3,17 +3,27 @@ from scrapy_spider.items import JobsItem
 
 pageSize = '75'
 sort = '0'
+category_number = 1
+job_category = ''
 
 class JobSpider(scrapy.Spider): 
     
     name = 'burzarada' 
     start_urls = ['https://burzarada.hzz.hr/Posloprimac_RadnaMjesta.aspx'] 
-    download_delay = 0.5 
+    download_delay = 0.5
 
     def parse(self, response): 
 
+        iter = 0
         for href in response.css('div.NKZbox > div.KategorijeBox > a ::attr(href)').extract(): 
+            
+            iter = iter + 1
+            if iter != category_number:
+                continue
 
+            job_categories = response.css('div.NKZbox > div.KategorijeBox > a ::text').extract()
+            global job_category
+            job_category= job_categories[category_number - 1]
             # Getting form data
             eventTarget = href.replace("javascript:__doPostBack('", "").replace("','')", "")
             eventArgument = response.css('#__EVENTARGUMENT::attr(value)').extract()
@@ -96,6 +106,9 @@ class JobSpider(scrapy.Spider):
 
         item = JobsItem()
 
+        global job_category
+        category = job_category
+
         url = response.request.url
         title = response.xpath('//*[@id="ctl00_MainContent_pnlAjaxBlock"]//h3//text()').extract_first()
         workplace = response.xpath('//*[@id="ctl00_MainContent_lblMjestoRada"]//text()').extract_first()
@@ -115,6 +128,7 @@ class JobSpider(scrapy.Spider):
         driving_test  = response.xpath('//*[@id="ctl00_MainContent_lblVozackiIspit"]//text()').extract_first()       
 
         item['url'] = url
+        item['category'] = category
         item['title'] = title
         item['workplace'] = workplace
         item['required_workers'] = required_workers

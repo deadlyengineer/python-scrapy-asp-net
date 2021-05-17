@@ -20,6 +20,7 @@ class JobsDB(DeclarativeBase):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     url = Column('URL', String(256), unique=True)
+    category = Column('Category', String(1024))
     title = Column('Title', String(1024))
     workplace = Column('Workplace', String(1024))
     type_of_employment = Column('Type_of_employment', String(1024))
