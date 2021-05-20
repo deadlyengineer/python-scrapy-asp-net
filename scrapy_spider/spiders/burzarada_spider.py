@@ -3,7 +3,7 @@ from scrapy_spider.items import JobsItem
 
 pageSize = '75'
 sort = '0'
-category_number = 1
+category_number = 2
 job_category = ''
 
 class JobSpider(scrapy.Spider): 
@@ -21,7 +21,7 @@ class JobSpider(scrapy.Spider):
             if iter != category_number:
                 continue
 
-            job_categories = response.css('div.NKZbox > div.KategorijeBox > a ::text').extract()
+            job_categories = response.css('div.NKZbox > div.KategorijeBox > a:not(span)::text').extract()
             global job_category
             job_category= job_categories[category_number - 1]
             # Getting form data
